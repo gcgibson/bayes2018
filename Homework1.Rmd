@@ -1,0 +1,193 @@
+---
+title: "Homework1"
+output: html_document
+header-includes:
+   - \usepackage{amsmath}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Problem 1
+
+
+$$p(\theta) = \frac{1}{21} \text{ for   }   \theta=0,0.05,0.1,...,1$$
+$$Y | \theta \sim Binom(n,\theta)$$
+
+$$P(Y = 5 | \theta =.05) = \binom{n}{5}\theta^5(1-\theta)^{n-5} = \binom{100}{5}.05^5(1-.05)^{100-5} \approx .180 $$
+
+$$P(Y = 5 | \theta =.5) = \binom{n}{5}\theta^5(1-\theta)^{n-5} = \binom{100}{5}.5^5(1-.5)^{100-5} \approx 5.94 \text{ x } 10^{-23} \approx 0 $$
+$$P(\theta =.05 | Y = 5) = \frac{P(Y=5|\theta =.05 ) P(\theta=.05)}{P(Y=5)}$$
+where
+
+$$P(Y = 5)  = \sum_{\theta'} P(Y,\theta') = \sum_{\theta'} P(Y |\theta')P(\theta') = \sum_{i=0}^{20} P(Y = 5 | \theta' = \frac{i}{20})P(\theta'=\frac{i}{20})$$
+$$=\sum_{i=0}^{20} \binom{100}{5}(\frac{i}{20})^5(1-(\frac{i}{20}))^{100-5}\frac{1}{21} \approx .010$$
+
+$$P(\theta =.05 | Y = 5) = \frac{ .18* \frac{1}{21}}{.010} \approx .857$$
+
+
+$$P(\theta =.5 | Y = 5) = \frac{ 0 \frac{1}{21}}{.010} \approx 0$$
+
+### Problem 2
+
+
+```{r}
+library(pander)
+
+prior <- function(theta,p,theta_support) {
+  if (length(p) == 1){
+    if (theta  %in% theta_support){
+      return (p)
+    }
+    else{
+      return (0)
+    }
+  }
+  else {
+    return (theta)
+  }
+}
+
+likelihood <- function(theta){
+  return (dbinom(5,100,theta))
+}
+
+get_normalizing_constant <- function(p,theta_support){
+  Z <- 0 
+  for (theta in theta_support){
+    Z <- Z + likelihood(theta)*prior(theta,p,theta_support)
+  }
+  return (Z)
+}
+
+posterior <- function(theta,p,theta_support){
+  return (likelihood(theta)*prior(theta,p,theta_support)/get_normalizing_constant(p,theta_support))  
+}
+
+theta_support <- seq(0,20)/20
+
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/21,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 1",type="h",)
+
+
+theta_support <- seq(10,20)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 2",type="h")
+
+
+theta_support <- seq(0,10)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 3",type="h")
+
+theta_support <- seq(0,20)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),theta_support,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 4",type="h")
+
+
+theta_support <- seq(0,20)/20
+e_theta_1 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+
+
+theta_support <- seq(10,20)/20
+e_theta_2 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
+
+
+theta_support <- seq(0,10)/20
+e_theta_3 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+
+theta_support <- seq(0,20)/20
+e_theta_4 <- sum(theta_support*posterior(theta_support,theta_support,theta_support))
+
+m <- data.frame(e_theta_1, e_theta_2,e_theta_3,e_theta_4)
+colnames(m) <- c("Expected Value Prior 1","Expected Value Prior 2","Expected Value Prior 3","Expected Value Prior 4")
+pandoc.table(m, keep.line.breaks = TRUE)
+
+
+```
+
+Prior 2 clearly pulls the posterior towards $1$ because it forces all thetas less than $.5$ to have $0$ probability. Prior 3 yeilds essentially the same results, which makes sense because the likelihood is so skewed towards the range $0,.5$, so excluding $.5,1$ does not change the posterior much. Prior 4 pushes the posterior slightly upwards, which again makes sense because the prior assigns higher probabilities to higher values of theta, pushing the posterior towards $1$. 
+
+### Problem 3
+
+```{r, echo=FALSE,message=FALSE}
+library(pander)
+
+prior <- function(theta,p,theta_support) {
+  if (length(p) == 1){
+    if (theta  %in% theta_support){
+      return (p)
+    }
+    else{
+      return (0)
+    }
+  }
+  else {
+    return (theta)
+  }
+}
+
+likelihood <- function(theta){
+  return (dbinom(50,1000,theta))
+}
+
+get_normalizing_constant <- function(p,theta_support){
+  Z <- 0 
+  for (theta in theta_support){
+    Z <- Z + likelihood(theta)*prior(theta,p,theta_support)
+  }
+  return (Z)
+}
+
+posterior <- function(theta,p,theta_support){
+  return (likelihood(theta)*prior(theta,p,theta_support)/get_normalizing_constant(p,theta_support))  
+}
+
+theta_support <- seq(0,20)/20
+
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/21,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 1",type="h",)
+
+
+theta_support <- seq(10,20)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 2",type="h")
+
+
+theta_support <- seq(0,10)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 3",type="h")
+
+theta_support <- seq(0,20)/20
+plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),theta_support,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 4",type="h")
+
+
+theta_support <- seq(0,20)/20
+e_theta_1 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+
+
+theta_support <- seq(10,20)/20
+e_theta_2 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
+
+
+theta_support <- seq(0,10)/20
+e_theta_3 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+
+theta_support <- seq(0,20)/20
+e_theta_4 <- sum(theta_support*posterior(theta_support,theta_support,theta_support))
+
+m <- data.frame(e_theta_1, e_theta_2,e_theta_3,e_theta_4)
+colnames(m) <- c("Expected Value Prior 1","Expected Value Prior 2","Expected Value Prior 3","Expected Value Prior 4")
+pandoc.table(m, keep.line.breaks = TRUE)
+```
+
+As we get more data the effect of the prior diminishes (which is called "swamping" I think?). This makes more sense, to me at least, if we consider the log posterior.
+
+
+$$p(\theta |y ) \propto p(y | \theta)p(\theta)$$
+
+taking logs we see
+
+$$log \ p(\theta|y) \propto log \ p(y | \theta)  + log \ p(\theta)$$
+
+$$log / p(\theta|y) \propto log \ \prod_{i=1}^nL(\theta | y) + log \ p(\theta)$$
+where $L(\theta | y)$ is the likelihood function.
+
+This becomes
+$$log \ p(\theta|y) \propto \sum_{i=1}^n log \ L(\theta | y) + log \ p(\theta)$$
+Now we can clearly see, as $n$ increases the effect of the $log \ p(\theta)$ dimishes. It is harder for me to see this clearly in the non-log space because we are dealing with multiplication of small numbers. 
+
+

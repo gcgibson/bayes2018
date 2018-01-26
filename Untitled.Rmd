@@ -1,0 +1,11 @@
+---
+title: "Homwork1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+$$p(\theta) = \frac{1}{21} \ for \theta=0,0.05,0.1,...,1$$
