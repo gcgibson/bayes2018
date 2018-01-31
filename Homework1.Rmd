@@ -37,7 +37,7 @@ $$=\sum_{i=0}^{20} \binom{100}{5}(\frac{i}{20})^5(1-(\frac{i}{20}))^{100-5}\frac
 $$P(\theta =.05 | Y = 5) = \frac{ .18* \frac{1}{21}}{.010} \approx .857$$
 
 
-$$P(\theta =.5 | Y = 5) = \frac{ 0 \frac{1}{21}}{.010} \approx 0$$
+$$P(\theta =.5 | Y = 5) = \frac{ 5.94e^{-23} \frac{1}{21}}{.010} \approx 0$$
 
 ### Problem 2
 
@@ -75,20 +75,37 @@ posterior <- function(theta,p,theta_support){
   return (likelihood(theta)*prior(theta,p,theta_support)/get_normalizing_constant(p,theta_support))  
 }
 
-theta_support <- seq(0,20)/20
 
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/21,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 1",type="h",ylim = c(0,1))
+
+theta_support <- seq(0,20)/20
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/21,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 1",type="h",ylim = c(0,1),lwd = 5)
 
 
 theta_support <- seq(10,20)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 2",type="h",ylim = c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/11,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 2",type="h",ylim = c(0,1.1),lwd = 5)
 
 
 theta_support <- seq(0,10)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 3",type="h",ylim = c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/11,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 3",type="h",ylim = c(0,1),lwd = 5)
 
 theta_support <- seq(0,20)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),theta_support,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 4",type="h",ylim = c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,theta_support,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 4",type="h",ylim = c(0,1),lwd = 5)
 
 
 theta_support <- seq(0,20)/20
@@ -100,7 +117,7 @@ e_theta_2 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 
 theta_support <- seq(0,10)/20
-e_theta_3 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+e_theta_3 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 theta_support <- seq(0,20)/20
 e_theta_4 <- sum(theta_support*posterior(theta_support,theta_support,theta_support))
@@ -150,19 +167,34 @@ posterior <- function(theta,p,theta_support){
 }
 
 theta_support <- seq(0,20)/20
-
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/21,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 1",type="h",ylim=c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/21,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 1",type="h",ylim=c(0,1),lwd = 5)
 
 
 theta_support <- seq(10,20)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 2",type="h",ylim=c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/11,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 2",type="h",ylim=c(0,1),lwd = 5)
 
 
 theta_support <- seq(0,10)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),1/11,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 3",type="h",ylim=c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,1/11,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 3",type="h",ylim=c(0,1),lwd = 5)
 
 theta_support <- seq(0,20)/20
-plot(x=seq(0,1,.05),y=posterior(seq(0,1,.05),theta_support,theta_support), ylab = "P(theta |Y)",xlab="theta",main="Posterior under prior 4",type="h",ylim=c(0,1))
+y <- c()
+for (i in seq(0,1,.05)){
+  y <- c(y,posterior(i,theta_support,theta_support))
+}
+plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 4",type="h",ylim=c(0,1),lwd = 5)
 
 
 theta_support <- seq(0,20)/20
@@ -174,7 +206,7 @@ e_theta_2 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 
 theta_support <- seq(0,10)/20
-e_theta_3 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
+e_theta_3 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 theta_support <- seq(0,20)/20
 e_theta_4 <- sum(theta_support*posterior(theta_support,theta_support,theta_support))
@@ -183,6 +215,8 @@ m <- data.frame(e_theta_1, e_theta_2,e_theta_3,e_theta_4)
 colnames(m) <- c("Expected Value Prior 1","Expected Value Prior 2","Expected Value Prior 3","Expected Value Prior 4")
 pandoc.table(m, keep.line.breaks = TRUE)
 ```
+
+
 
 As we get more data the effect of the prior diminishes (which is called "swamping" I think?). This makes more sense, to me at least, if we consider the log posterior.
 
