@@ -2,6 +2,7 @@
 title: "Homework 1"
 output:
   html_document: default
+  word_document: default
   pdf_document: default
 subtitle: Casey Gibson
 header-includes: \usepackage{amsmath}
@@ -47,31 +48,24 @@ library(pander)
 
 posterior4 <- function(theta,p_of_theta){
   posterior_vals <- c()
-  Z <- 0 
+ # Z <- 0 
   for (i in 1:length(theta)){
     posterior_vals <- c(posterior_vals, dbinom(5,100,theta[i])*p_of_theta[i])
-    Z <- Z +  dbinom(5,100,theta[i])*p_of_theta[i]
+    
   }
   
    
-  return (posterior_vals/Z)
+  return (posterior_vals/sum(dbinom(5,100,theta)*p_of_theta))
 }
 
 
 prior <- function(theta,p,theta_support) {
-  
- 
-  ISINARRAY <- FALSE 
-  for (theta_prime in theta_support){
-    if (theta == theta_prime){
-      ISINARRAY <- TRUE
-    }
-  }
-  if (ISINARRAY){
+  if (theta %in% theta_support){
     return (p)
-  }
-  else {
-    return (0)
+  } 
+  else{
+    
+    return (0) 
   }
 }
 
@@ -93,24 +87,27 @@ posterior <- function(theta,p,theta_support){
 
 
 
-theta_support <- seq(0,20)/20
+ylab <- expression(paste(italic("p"),"(",theta,")", sep=""))
+main <- "Posterior under prior 1"
 y <- c()
 for (i in seq(0,1,.05)){
-  y <- c(y,posterior(i,1/21,theta_support))
+  y <- c(y,posterior(i,1/21,seq(0,1,.05)))
 }
-plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 1",type="h",ylim = c(0,1),lwd = 5)
+coluse <- 1
+xlab <- expression(theta)
+ymax <- 1.1*max(y)
 
+plot(y~seq(0,1,.05), type = "h", lwd = 5, main = main, ylim = c(0, 1), ylab = ylab, col = coluse, xlab = xlab)
 
-theta_support <- seq(10,20)/20
 y <- c()
 for (i in seq(0,1,.05)){
-  y <- c(y,posterior(i,1/11,theta_support))
+  y <- c(y,posterior(i,1/11,seq(.5,1,.05)))
 }
 
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 2",type="h",ylim = c(0,1.1),lwd = 5)
 
 
-theta_support <- seq(0,10)/20
+theta_support <- seq(0,1,.05)
 y <- c()
 for (i in seq(0,1,.05)){
   y <- c(y,posterior(i,1/11,theta_support))
@@ -118,23 +115,28 @@ for (i in seq(0,1,.05)){
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 3",type="h",ylim = c(0,1),lwd = 5)
 
 y <- posterior4(theta = seq(0,1,by=.05),p_of_theta =seq(0,1,by=.05)/sum(seq(0,1,by=.05)) )
+
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 4",type="h",ylim = c(0,1),lwd = 5)
 
 
-theta_support <- seq(0,20)/20
+theta_support <- seq(0,1,.05)
+
 e_theta_1 <- sum(theta_support*posterior(theta_support,1/21,theta_support))
 
 
-theta_support <- seq(10,20)/20
+theta_support <- seq(.5,1,.05)
 e_theta_2 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 
-theta_support <- seq(0,10)/20
+theta_support <- seq(0,1,.05)
 e_theta_3 <- sum(theta_support*posterior(theta_support,1/11,theta_support))
 
 
 
 posterior4vals <- posterior4(theta = seq(0,1,by=.05),p_of_theta =seq(0,1,by=.05)/sum(seq(0,1,by=.05)) )
+
+
+
 e_theta_4 <- sum(seq(0,1,by=.05)*posterior4vals)
 
 m <- data.frame(signif(e_theta_1,3), signif(e_theta_2,3),signif(e_theta_3,3),signif(e_theta_4,3))
@@ -146,7 +148,13 @@ knitr::kable(m)
 
 ```
 
-Prior 2 clearly pulls the posterior towards $1$ because it forces all thetas less than $.5$ to have $0$ probability. Prior 3 yeilds essentially the same results, which makes sense because the likelihood is so skewed towards the range $0,.5$, so excluding $.5,1$ does not change the posterior much. Prior 4 pushes the posterior slightly upwards, which again makes sense because the prior assigns higher probabilities to higher values of theta, pushing the posterior towards $1$. 
+
+
+\pagebreak
+
+#### Results
+
+Prior $2$ clearly pulls the posterior towards the right because it forces all $\theta's$ less than $.5$ to have $0$ probability. Prior $3$ yeilds essentially the same results as prior $1$, which makes sense because the likelihood is so skewed towards the range $0,.5$, so excluding $.5,1$ does not change the posterior much. Prior $4$ pushes the posterior slightly upwards, which again makes sense because the prior assigns higher probabilities to higher values of theta, pushing the posterior to the right. 
 
 ### Problem 3
 
@@ -159,8 +167,6 @@ posterior4 <- function(theta,p_of_theta){
     posterior_vals <- c(posterior_vals, dbinom(50,1000,theta[i])*p_of_theta[i])
     Z <- Z +  dbinom(50,1000,theta[i])*p_of_theta[i]
   }
-  
-   
   return (posterior_vals/Z)
 }
 
@@ -195,7 +201,7 @@ posterior <- function(theta,p,theta_support){
   return (likelihood(theta)*prior(theta,p,theta_support)/get_normalizing_constant(p,theta_support))  
 }
 
-theta_support <- seq(0,20)/20
+theta_support <- seq(0,1,.05)
 y <- c()
 for (i in seq(0,1,.05)){
   y <- c(y,posterior(i,1/21,theta_support))
@@ -203,7 +209,7 @@ for (i in seq(0,1,.05)){
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 1",type="h",ylim=c(0,1),lwd = 5)
 
 
-theta_support <- seq(10,20)/20
+theta_support <- seq(.5,1,.05)
 y <- c()
 for (i in seq(0,1,.05)){
   y <- c(y,posterior(i,1/11,theta_support))
@@ -211,14 +217,14 @@ for (i in seq(0,1,.05)){
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 2",type="h",ylim=c(0,1),lwd = 5)
 
 
-theta_support <- seq(0,10)/20
+theta_support <- seq(0,.5,.05)
 y <- c()
 for (i in seq(0,1,.05)){
   y <- c(y,posterior(i,1/11,theta_support))
 }
 plot(x=seq(0,1,.05),y=y, ylab = expression(paste(italic("p"),"(",theta,"|y)", sep="")),xlab=expression(theta),main="Posterior under prior 3",type="h",ylim=c(0,1),lwd = 5)
 
-theta_support <- seq(0,20)/20
+theta_support <- seq(0,1,.05)
 y <- c()
 for (i in seq(0,1,.05)){
   y <- c(y,posterior(i,theta_support,theta_support))
@@ -242,6 +248,8 @@ e_theta_4 <- sum(theta_support*posterior(theta_support,theta_support,theta_suppo
 
 
 posterior4vals <- posterior4(theta = seq(0,1,by=.05),p_of_theta =seq(0,1,by=.05)/sum(seq(0,1,by=.05)) )
+
+
 e_theta_4 <- sum(seq(0,1,by=.05)*posterior4vals)
 
 
@@ -252,7 +260,9 @@ colnames(m) <- c("Expected Value Prior 1","Expected Value Prior 2","Expected Val
 knitr::kable(m)
 ```
 
+#### Results
 
+All the priors become much more concentrated around the maximum likelihood estimate of $\theta$.
 
 As we get more data the effect of the prior diminishes (which is called "swamping" I think?). This makes more sense, to me at least, if we consider the log posterior.
 
@@ -268,6 +278,6 @@ where $L(\theta | y)$ is the likelihood function.
 
 This becomes
 $$log \ p(\theta|y) \propto \sum_{i=1}^n log \ L(\theta | y) + log \ p(\theta)$$
-Now we can clearly see, as $n$ increases the effect of the $log \ p(\theta)$ dimishes. It is harder for me to see this clearly in the non-log space because we are dealing with multiplication of small numbers. 
+Now we can clearly see, as $n$ increases the effect of the $log \ p(\theta)$ dimishes since the sum term contributes more than the prior. It is harder for me to see this clearly in the non-log space because we are dealing with multiplication of small numbers. 
 
 
