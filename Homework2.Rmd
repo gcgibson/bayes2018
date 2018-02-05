@@ -1,0 +1,151 @@
+---
+title: "Homework1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Problem 1
+
+We can write  $\theta \sim U(0,1)$ prior as a $ \theta \sim Beta(1,1)$ prior. Under a binomial likelihood this becomes 
+
+$$\theta  | D \sim Beta(1+y,1+n-y)$$
+So when $y=10$ and $n=100$ this becomes
+$$\theta  | D\sim Beta(11,91)$$
+We know that the expected value of a beta distribution is 
+$$E(\theta |D ) = \frac{11}{102} = .108$$
+
+We can find the quantiles using $qbeta$ in r
+
+```{r}
+#library(pander)
+print (signif(qbeta(.05,11,91),3))
+print (signif(qbeta(.95,11,91),3))
+
+```
+
+
+### Problem 2
+
+Under prior 1 we have 
+
+$$\theta \sim Beta(.2,.8)$$
+so
+
+$$\theta |D \sim Beta(.2+10,.8+90)$$
+
+$$E(\theta |D ) = .112$$
+
+```{r}
+#library(pander)
+print (signif(qbeta(.05,.2+10,.8+90),3))
+print (signif(qbeta(.05,.2+10,.8+90),3))
+```
+
+Under prior 2 we have 
+
+$$\theta \sim Beta(20,80)$$
+so
+
+$$\theta |D \sim Beta(20+10,80+90)$$
+
+$$E(\theta |D ) = .176$$
+
+
+```{r}
+print (signif(qbeta(.05,20+10,80+90),3))
+print (signif(qbeta(.05,20+10,80+90),3))
+```
+
+
+
+We can see that as $n_0$ increases, the effect of the prior becomes stronger. It pulls the posterior expected value and quantiles closer to the original study (20% incorrect). 
+
+
+### Problem 3
+
+We now investigate the effect of the sample size.
+
+```{r}
+n <- c(10,20,100,500,750,1000)
+
+get_mean_and_CI <- function(n,alpha,beta){
+  return_vec <- c()
+  return_vec <-c(return_vec,signif(qbeta(.05,alpha+n*.10,beta+n*.9),3))
+  return_vec <- c(return_vec,(alpha+.1*n)/(alpha+beta + n))
+  return_vec <-c(return_vec,signif(qbeta(.95,alpha+n*.10,beta+n*.9),3))
+
+  return (return_vec)
+}
+
+mat <- matrix(NA,nrow=2*3*length(n),ncol=3)
+
+count <- 1
+for (i in 1:length(n)){
+  tmp <- get_mean_and_CI(n[i],.2,.8)
+  
+  mat[count,] <- c(n[i],tmp[1],0)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[2],0)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[3],0)
+  count <- count + 1
+  tmp <- get_mean_and_CI(n[i],20,80)
+  mat[count,] <- c(n[i],tmp[1],1)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[2],1)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[3],1)
+  count <- count + 1
+  }
+
+
+require(reshape2)
+
+df <- as.data.frame(mat)
+colnames(df) <- c("n","val","prior_num")
+
+df[, 'prior_num'] <- as.factor(df[, 'prior_num'])
+df[, 'n'] <- as.factor(df[, 'n'])
+
+ggplot(data = df, aes(x=n, y=val, fill=prior_num)) + geom_boxplot()   +
+    facet_wrap(~n, scale="free")
+
+ 
+
+
+```
+
+
+### Problem 4
+
+We can use a discrete uniform prior on $\theta$ of the form 
+
+$$p(\theta) = \frac{1}{11} \ \text{for } \theta = .5,.55,.6...1$$
+```{r}
+theta <- seq(.5,1,by=.05)
+p_of_theta <- rep(1/11,length(theta))
+posterior <- function(theta,p_of_theta){
+  posterior_vals <- c()
+ # Z <- 0 
+  for (i in 1:length(theta)){
+    posterior_vals <- c(posterior_vals, dbinom(10,100,theta[i])*p_of_theta[i])
+    
+  }
+  return (posterior_vals/sum(dbinom(10,100,theta)*p_of_theta))
+}
+
+post <- posterior(theta,p_of_theta)
+
+ylab <- expression(paste(italic("p"),"(",theta,"|y)", sep=""))
+xlab <- expression(theta)
+plot(post~theta, type = "h", lwd = 5, main = "Posterior", ylim = c(0, 1), ylab = ylab, xlab = xlab)
+```
+
+```{r}
+print (sum(theta*posterior(theta,p_of_theta)))
+```
+
+The mean is pushed up towards $.5$ because all values of $\theta < .5$ are assigned probability 0.
