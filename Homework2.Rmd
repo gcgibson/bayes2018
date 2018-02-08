@@ -75,9 +75,9 @@ n <- c(10,20,100,500,750,1000)
 
 get_mean_and_CI <- function(n,alpha,beta){
   return_vec <- c()
-  return_vec <-c(return_vec,signif(qbeta(.05,alpha+n*.10,beta+n*.9),3))
+  return_vec <-c(return_vec,signif(qbeta(.025,alpha+n*.10,beta+n*.9),3))
   return_vec <- c(return_vec,(alpha+.1*n)/(alpha+beta + n))
-  return_vec <-c(return_vec,signif(qbeta(.95,alpha+n*.10,beta+n*.9),3))
+  return_vec <-c(return_vec,signif(qbeta(.975,alpha+n*.10,beta+n*.9),3))
 
   return (return_vec)
 }
