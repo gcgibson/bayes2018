@@ -1,5 +1,5 @@
 ---
-title: "Homework2"
+title: "Homework 2"
 author: "Casey Gibson"
 output:
   pdf_document: default
@@ -88,18 +88,18 @@ count <- 1
 for (i in 1:length(n)){
   tmp <- get_mean_and_CI(n[i],.2,.8)
   
-  mat[count,] <- c(n[i],tmp[1],0)
-  count <- count + 1
-  mat[count,] <- c(n[i],tmp[2],0)
-  count <- count + 1
-  mat[count,] <- c(n[i],tmp[3],0)
-  count <- count + 1
-  tmp <- get_mean_and_CI(n[i],20,80)
   mat[count,] <- c(n[i],tmp[1],1)
   count <- count + 1
   mat[count,] <- c(n[i],tmp[2],1)
   count <- count + 1
   mat[count,] <- c(n[i],tmp[3],1)
+  count <- count + 1
+  tmp <- get_mean_and_CI(n[i],20,80)
+  mat[count,] <- c(n[i],tmp[1],2)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[2],2)
+  count <- count + 1
+  mat[count,] <- c(n[i],tmp[3],2)
   count <- count + 1
   }
 
@@ -126,7 +126,7 @@ We can see from the plots above that as $n$ increases three important properties
 
 2. Both priors are pulled closer and closer to the maximum likelihood estimate of $.10$
 
-3. The posterior becomes more symmetric about the mean , the box-plots of $n=10,20$ seem skewed relative to those of $n=500,1000$.
+3. Under prior 1, the posterior becomes more symmetric about the mean , the box-plots of $n=10,20$ seem skewed relative to those of $n=500,1000$.
 
 ### Problem 4
 
