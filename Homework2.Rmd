@@ -1,6 +1,9 @@
 ---
-title: "Homework1"
-output: html_document
+title: "Homework2"
+author: "Casey Gibson"
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -9,21 +12,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ### Problem 1
 
-We can write  $\theta \sim U(0,1)$ prior as a $ \theta \sim Beta(1,1)$ prior. Under a binomial likelihood this becomes 
+We can write  $\theta \sim U(0,1)$ prior as a  $\theta \sim Beta(1,1)$ prior. Under a binomial likelihood this becomes 
 
-$$\theta  | D \sim Beta(1+y,1+n-y)$$
+$$\theta  | y \sim Beta(1+y,1+n-y)$$
 So when $y=10$ and $n=100$ this becomes
-$$\theta  | D\sim Beta(11,91)$$
+$$\theta  | y \sim Beta(11,91)$$
 We know that the expected value of a beta distribution is 
-$$E(\theta |D ) = \frac{11}{102} = .108$$
+$$E(\theta | y ) = \frac{11}{102} = .108$$
 
 We can find the quantiles using $qbeta$ in r
 
 ```{r}
-#library(pander)
-print (signif(qbeta(.05,11,91),3))
-print (signif(qbeta(.95,11,91),3))
-
+print (signif(qbeta(.025,11,91),3))
+print (signif(qbeta(.975,11,91),3))
 ```
 
 
@@ -34,14 +35,14 @@ Under prior 1 we have
 $$\theta \sim Beta(.2,.8)$$
 so
 
-$$\theta |D \sim Beta(.2+10,.8+90)$$
+$$\theta | y \sim Beta(.2+10,.8+90)$$
 
-$$E(\theta |D ) = .112$$
+$$E(\theta | y ) = .101$$
 
 ```{r}
 #library(pander)
-print (signif(qbeta(.05,.2+10,.8+90),3))
-print (signif(qbeta(.05,.2+10,.8+90),3))
+print (signif(qbeta(.025,.2+10,.8+90),3))
+print (signif(qbeta(.975,.2+10,.8+90),3))
 ```
 
 Under prior 2 we have 
@@ -49,14 +50,14 @@ Under prior 2 we have
 $$\theta \sim Beta(20,80)$$
 so
 
-$$\theta |D \sim Beta(20+10,80+90)$$
+$$\theta | y \sim Beta(20+10,80+90)$$
 
-$$E(\theta |D ) = .176$$
+$$E(\theta | y ) = .15$$
 
 
 ```{r}
-print (signif(qbeta(.05,20+10,80+90),3))
-print (signif(qbeta(.05,20+10,80+90),3))
+print (signif(qbeta(.025,20+10,80+90),3))
+print (signif(qbeta(.975,20+10,80+90),3))
 ```
 
 
@@ -68,7 +69,8 @@ We can see that as $n_0$ increases, the effect of the prior becomes stronger. It
 
 We now investigate the effect of the sample size.
 
-```{r}
+```{r, echo=FALSE,message=FALSE}
+library(ggplot2)
 n <- c(10,20,100,500,750,1000)
 
 get_mean_and_CI <- function(n,alpha,beta){
@@ -118,6 +120,13 @@ ggplot(data = df, aes(x=n, y=val, fill=prior_num)) + geom_boxplot()   +
 
 ```
 
+We can see from the plots above that as $n$ increases three important properties of the model emerge.
+
+1. The 95% confidence interval for both priors shrinks (which is maybe difficult to see in the plots unless you look at the scale on the y-axis)
+
+2. Both priors are pulled closer and closer to the maximum likelihood estimate of $.10$
+
+3. The posterior becomes more symmetric about the mean , the box-plots of $n=10,20$ seem skewed relative to those of $n=500,1000$.
 
 ### Problem 4
 
