@@ -1,5 +1,6 @@
 ---
-title: "Homework3"
+title: "Homework 3"
+author: "Graham Gibson"
 output: pdf_document
 ---
 
@@ -21,149 +22,98 @@ $$E(\mu | y) = \frac{\frac{\mu_0}{15} + \frac{n\bar{y}}{15}}{\frac{n+1}{15}}$$
 
 We can see that the $\sigma$ terms drop out and we are left with
 
-$$E(\mu | y) =\frac{\mu_0 + n\bar{y}}{n+1}$$
+$$E(\mu | y) =\frac{\mu_0 + n\bar{y}}{n+1} = \frac{100+10*113}{11}= 111.818 $$
 
-Since we know that $\mu | y$ is normally distributed we can construct a confidence interval based on 
+Since we know that $\mu | y$ is normally distributed we can construct a $95\%$ credible interval based on 
 
 $$\frac{\mu_0 + n\bar{y}}{n+1} - 1.96*\sigma,\frac{\mu_0 + n\bar{y}}{n+1} + 1.96*\sigma$$
+$$\frac{100 + 10 (113)}{11} - 1.96*\sigma,\frac{\mu_0 + n\bar{y}}{n+1} + 1.96*\sigma$$
 
 where
 
-$$\sigma = \frac{1}{\frac{1}{15} +  \frac{n}{15}} = \frac{15}{n+1} = V$$
+$$\sigma^2 = \frac{1}{\frac{1}{15} +  \frac{n}{15}} = \frac{15^2}{n+1} = V =\frac{15^2}{11} = 20.5$$
 
-###Problem 2 
+so our final credible interval is 
+
+```{r}
+
+print ("Lower bound")
+print (signif((qnorm(.025,mean=111.818, sd = sqrt((15^2)/11))),5))
+print ("Upper bound")
+print (signif((qnorm(.975,mean=111.818, sd = sqrt((15^2)/11))),5))
+
+```
+
+
+### Problem 2 
 
 We know by definition that bias is 
 
 $$E(\hat{\mu} | \mu^*) - \mu^*$$
 Let's take a closer look at $$E(\hat{\mu} | \mu^*)$$
 
-$$ = E(\frac{\mu_0 + n\bar{y}}{n+1} | \mu* ) = \frac{\mu_0}{n+1} + \frac{n}{n+1}\mu*$$
-We can see that the Bayesian estimator has higher bias than the frequentist estimator. 
+$$ = E(\frac{\mu_0 + n\bar{y}}{n+1} | \mu* ) = \frac{\mu_0}{n+1} + \frac{n}{n+1}\mu^*$$
+by $$E(\bar{y}) = \mu^*$$
+
+We can see that the Bayesian estimator is biased, unlike the frequentist estimator. 
+
+In particular, when $\mu^{*} = 112$ and $\mu_0 =100$ we get the bias is 
+$$\frac{100}{11} + \frac{10}{11}112 - 112 = -1.09$$
+
+The bias of the maximum likelihood estimate is given by $E(\bar{y}) - \mu^* = 0$ so the bayesian estimate has larger bias.
 
 
-We also need to examine $$Var(\hat{\mu} | \mu^*) = Var(\frac{\mu_0 + n\bar{y}}{n+1} | \mu*)=Var(\frac{ n\bar{y}}{n+1} | \mu*)$$
+The variance of the bayes estimate is given by 
 
-because the first patrt is a constant.
-
-$$=(\frac{n}{n+1})^2 \sigma^2$$
-
-We can see that the Bayesian estimator has a smaller variance than the frequentist estimator by $n/n+1 < 1$
-We can now consider the MSE of the bayesian estimator 
-
-$$= (\frac{n}{n+1})^2 \sigma^2 + (\frac{\mu_0}{n+1} + \frac{n}{n+1}\mu*)^2$$
+$$Var(\frac{\mu_0 + n\bar{y}}{n+1} | \mu*) = \frac{1}{11^2}\frac{\sigma^2}{11} = 10\frac{225}{11^2} = 18.6$$
 
 
-We know by the properties of the sampling distribution that the frequentist MSE is 
 
-$$\frac{\sigma^2}{n} + 0^2$$
+whereas the variance of the MLE estimate is given by 
 
-Lets look at 
+$$Var(\bar{y}) = \frac{225}{10} =22.5$$
+Putting this together we get that 
 
-$$ (\frac{n}{n+1})^2 \sigma^2 + (\frac{\mu_0}{n+1} + \frac{n}{n+1}\mu*)^2 - \frac{\sigma^2}{n} ? 0$$
-We know that bias^2 term is >0 so we just need to ask 
+$$MSE(Bayes) = 18.6 + 1.19 = 19.79$$ 
+$$MSE(MLE) = 22.5$$ 
 
-$$ (\frac{n}{n+1})^2 \sigma^2  - \frac{\sigma^2}{n} ? 0$$
-
-$$ \sigma^2((\frac{n}{n+1})^2   - \frac{1}{n}) ? 0$$
-$$ \sigma^2((\frac{n^3}{n(n+1)^2})   - \frac{(n+1)^2}{n(n+1)^2}) ? 0$$
-$$ \sigma^2(\frac{n^3 - (n^2 + 2n + 1)}{n(n+1)^2}) ? 0$$
-
-$$ \sigma^2(\frac{n^3 - n^2 - 2n - 1)}{n(n+1)^2}) ? 0$$
-which for $n>2$ is strictly positive. 
+So the $Bias_{Bayes} > Bias_{Mle}$ but $Var_{Bayes} << Var_{Mle}$ so $MSE_{Bayes} < MSE_{MLE}$
 
 
 ```{r}
-library(foreign)
-# install JAGS from http://sourceforge.net/projects/mcmc-jags/files/
-# and load these packages:
-library(rjags)
-library(R2jags)
-# if you want to use the stan shiny app for diagnostics:
-kidiq <- read.dta("/home/gcgibson/bayes2018/kidiq (1).dta")
-names(kidiq)
-y.i <- rnorm(100,100,13)#kidiq$kid_score
-n <- length(y.i)
-
-
-model <- 
-  "model{
-for (i in 1:n){
-y.i[i] ~ dnorm(mu, tau.y) 
-# note: normals in JAGS use a precision parameter!!
-}
-tau.y ~ dgamma(nu0/2, nu0/2*sigma.y0^2)
-mu ~ dnorm(mu0, tau.mu0) # again, use precision!
-}"
-
-# prior parameters
+y_bar <- 113
+n <- 10
 mu0 <- 100
-sigma.mu0 <- 15
+sig2_0 <- 15^2
+sig2_mu0 <- 15^2
+var.y <- 13^2
 nu0 <- 1
-sigma.y0 <- 15 
+S <- 1000
+nun <- nu0+n
 
-jags.data <- list(
-  # elements below have been defined already
-  y.i = y.i,
-  n = n,
-  tau.mu0 = 1/sigma.mu0^2,
-  mu0 = mu0,
-  nu0 = nu0,
-  sigma.y0   = sigma.y0
-  #  tau.0  = 1/sigma.y0^2
-)
+PHI<- matrix(nrow=S,ncol=2)
+PHI[1,]<- phi<- c(y_bar,1/var.y)
 
-parnames <- c("mu", "tau.y")
-mod<-jags(data = jags.data, 
-          parameters.to.save=parnames, 
-          model.file = textConnection(model))
-print(mod)
-names(mod)
-
-# samples are saved in sims.array, which has dimension niterationsxnchainsx(nparameters+deviance)
-mcmc.array <- mod$BUGSoutput$sims.array
-dim(mcmc.array) 
-# default is 2000 iterations of which 1000 are burnin.
-# 3 chains and here we have 2 parameters
-
-# I usually use a little function to make traceplots
-#--------------------------------------------------
-PlotTrace <- function(#Traceplot for one parameter
-  ### Trace plot for one parameter and add loess smoother for each chain
-  parname, mcmc.array,##<< needs to be 3-dimensional array!
-  n.chains= NULL, n.sim= NULL, main = NULL){
-  if (is.null(main)) main <- parname
-  if (is.null(n.sim)) n.sim <- dim(mcmc.array)[1]
-  if (is.null(n.chains)) n.chains <- dim(mcmc.array)[2]
-  plot(c(mcmc.array[,1,parname]), type = "l", ylab = parname,  main = main,
-       ylim = c(min(mcmc.array[,,parname]),max(mcmc.array[,,parname])))
-  for (chain in 1:n.chains){
-    lines(c(mcmc.array[,chain,parname]), type = "l", col = chain)
-  }
-  for (chain in 1:n.chains){
-    curve(predict(loess(c(mcmc.array[,chain,parname])~seq(1,n.sim)),x), lty = 2, lwd = 3, add = TRUE, type = "l", col = chain)
-  }
+# Gibbs sampling
+set.seed (1)
+for(s in 2:S){
+# generate a new mu value from its full conditional
+  sigma2.mun <- 1/(1/sig2_mu0 + n*phi[2])
+  mun <- sigma2.mun*( mu0/ sig2_mu0 + n*y_bar*phi[2])
+  phi[1] <- rnorm( 1 , mun, sqrt(sigma2.mun))
+  
+# generate a new 1/sigma^2 value from its full conditional
+  sig2_n <-(1/nun)*(nu0*sig2_0 + (n-1)*var.y + n*(y_bar - phi[1])^2)
+  phi[2] <- rgamma(1, nun/2 , nun*sig2_n/2)
+  PHI[s,]<- phi
 }
-#----------------------------------------------
-#pdf(paste(figdir, "jags1.pdf", sep =""), width = 6, height = 4)
-#par(mfrow = c(1,2), lwd = 3, cex.axis = 2, cex.lab = 2, cex.main = 2,mar = c(5,5,3,3))
-PlotTrace(parname = "mu", mcmc.array)
-PlotTrace(parname = "tau.y", mcmc.array)
-#dev.off()
-
-mu.s <-  c(mcmc.array[,,"mu"])
-mean(mu.s)
-quantile(mu.s, c(0.025, 0.975))
-# or directly from mod
-round(mod$BUGSoutput$summary["mu", c("mean", "2.5%", "97.5%", "n.eff", "Rhat")],2) 
-sigma.y.s <- 1/sqrt(c(mcmc.array[,,"tau.y"]))
-
-hist(mu.s, freq = F)
-hist(sigma.y.s, freq = F)
-
-print (mean(sigma.y.s))
-print (quantile(sigma.y.s, c(0.025, 0.975)))
 
 
+print (signif(mean(PHI[,1]),3))
+print ("95% Credible Interval")
+print (signif(quantile(PHI[,1],c(.025,.975)),3))
 
+print (signif(mean(sqrt(1/PHI[,2])),3))
+print ("95% Credible Interval")
+print (signif(quantile(1/sqrt(PHI [,2]),c(.025,.975))),3)
 ```
