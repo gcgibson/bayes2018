@@ -7,26 +7,17 @@ output: html_document
 ### Problem 1
 
 ```{r}
-srrs2 <- read.table("/Users/gcgibson/Bayes//radon.dat", header=T, sep=",")
+srrs2 <- read.table("/Users/gcgibson/Downloads/marriage.csv", header=T, sep=",")
 #names(srrs2)
 #unique(srrs2$state) # states
 # we'll use MN
-mn <- srrs2$state=="MN"
-# Names of variables are slightly different from GH; 
-# I prefer coding where the subscript gives info about the dimension,
-# whether it is for all obs (houses i=1,2,..,n), counties (j=1,2,..,J).
-radon.i <- srrs2$activity[mn]
-#summary(radon.i)
-#hist(radon.i)
-# GH set any zero levels to 0.1 (explained on p... in book)
-logradon.i <- log (ifelse (radon.i==0, .1, radon.i))
-floor.i <- srrs2$floor[mn]       # 0 for basement, 1 for first floor
-n <- length(radon.i)
-y.i <- logradon.i
-x.i <- floor.i
+
+n <- length(srrs2$agemarried)
+y.i <- srrs2$agemarried
+#x.i <- floor.i
 
 # get county index variable
-county.i <- as.vector(srrs2$county[mn])
+county.i <- as.vector(srrs2$ethnicgroup)
 county.j <- unique(county.i)
 J <- length(county.j)
 countygetj.i <- rep (NA, n) 
@@ -68,7 +59,7 @@ for (j in 1:J){
 tau.y <- pow(sigma.y, -2)
 tau.alpha <-  pow(sigma.alpha, -2)
 
-mu.alpha ~ dnorm(1,1/3^2)
+mu.alpha ~ dnorm(20,5)
 sigma.y ~ dunif(0,5)
 sigma.alpha ~ dunif(0,5)
 
@@ -121,3 +112,5 @@ hist(c(mcmc.array[,,"sigma.y"]), freq = F, main = "", xlab = expression(sigma[y]
 curve(dunif(x,0,5), add = T, col = 2)
 
 ```
+
+

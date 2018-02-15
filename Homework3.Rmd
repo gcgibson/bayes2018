@@ -107,13 +107,20 @@ for(s in 2:S){
   phi[2] <- rgamma(1, nun/2 , nun*sig2_n/2)
   PHI[s,]<- phi
 }
+```
 
 
+```{r,echo=FALSE,message=FALSE}
+print ("Mu point estimate")
 print (signif(mean(PHI[,1]),3))
-print ("95% Credible Interval")
+
+print ("Mu 95% Credible Interval")
 print (signif(quantile(PHI[,1],c(.025,.975)),3))
 
-print (signif(mean(sqrt(1/PHI[,2])),3))
-print ("95% Credible Interval")
+print ("Sigma point estimate")
+print (signif(mean(1/sqrt(PHI[,2])),3))
+
+print ("Sigma 95% Credible Interval")
 print (signif(quantile(1/sqrt(PHI [,2]),c(.025,.975))),3)
+
 ```
