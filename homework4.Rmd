@@ -1,12 +1,16 @@
 ---
 title: "Homework 4"
 author: "Casey Gibson"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ### Problem 1
 
-```{r}
+
+$$m_{\sigma_y} = 5, m_{\sigma_{alpha}} = 5, \mu_0 = 20, \sigma_{\mu_0}^2 = 36$$
+```{r, echo=FALSE,warning=FALSE,message=FALSE}
 srrs2 <- read.table("/Users/gcgibson/Downloads/marriage.csv", header=T, sep=",")
 #names(srrs2)
 #unique(srrs2$state) # states
@@ -38,14 +42,7 @@ sample.size.jittered.j <- sample.size.j*exp (runif (J, -.1, .1))
 ```
 
 
-
-
-
 ```{r}
-
-library(rjags)
-library(R2jags)
-
 model <- 
 "model {
 for (i in 1:n){
@@ -59,11 +56,18 @@ for (j in 1:J){
 tau.y <- pow(sigma.y, -2)
 tau.alpha <-  pow(sigma.alpha, -2)
 
-mu.alpha ~ dnorm(20,5)
+mu.alpha ~ dnorm(20,1/6^2)
 sigma.y ~ dunif(0,5)
 sigma.alpha ~ dunif(0,5)
 
 }"
+```
+
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+
+library(rjags)
+library(R2jags)
+library(ggplot2)
 
 jags.data <- list(  y.i = y.i,  n = n, getj.i  = countygetj.i, J = J)
 parnames <- c("alpha.j", "mu.alpha", "sigma.y", "sigma.alpha")
@@ -72,11 +76,54 @@ mod0 <-jags(data = jags.data,
             model.file = textConnection(model))
 # point estimates of the county means
 partpooled.j <- mod0$BUGSoutput$summary[paste0("alpha.j[", 1:J, "]"), c("mean")]
-
-max(mod0$BUGSoutput$summary[, c("Rhat")])
-min(mod0$BUGSoutput$summary[, c("n.eff")])
-# check traceplots, at least for hyperparameters
 mcmc.array <- mod0$BUGSoutput$sims.array
+
+mu.alpha.hat <- rowMeans(mcmc.array[,,"mu.alpha"])
+
+mu.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(mu.alpha.hat)),rep("Prior",length(mu.alpha.hat))),val = c(mu.alpha.hat,rnorm(1000,20,6)))
+
+mu.alpha.hat.df$Legend <- as.factor(mu.alpha.hat.df$Legend)
+ggplot(data=mu.alpha.hat.df,
+       aes(x=val))+
+       geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "mu.alpha")
+
+
+sigma.alpha.hat <- rowMeans(mcmc.array[,,"sigma.alpha"])
+
+sigma.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.alpha.hat)),rep("Prior",length(sigma.alpha.hat))),val = c(sigma.alpha.hat,runif(1000,0,5)))
+
+sigma.alpha.hat.df$Legend <- as.factor(sigma.alpha.hat.df$Legend)
+ggplot(data=sigma.alpha.hat.df,
+       aes(x=val))+
+       geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "sigma.alpha")
+
+
+sigma.y.hat <- rowMeans(mcmc.array[,,"sigma.y"])
+
+sigma.y.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.y.hat)),rep("Prior",length(sigma.y.hat))),val = c(sigma.y.hat,runif(1000,0,5)))
+
+sigma.y.hat.df$Legend <- as.factor(sigma.y.hat.df$Legend)
+ggplot(data=sigma.y.hat.df,
+       aes(x=val))+
+       geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "sigma.y")
+
+
+
+
+
+
+
+
+```
+
+### Problem 2
+```{r,echo=FALSE,warning=FALSE,message=FALSE}
+print (round(mod0$BUGSoutput$summary[c("mu.alpha","sigma.alpha","sigma.y"), c("n.eff", "Rhat")],1))
+
+
+#max(mod0$BUGSoutput$summary[, c("Rhat")])
+#min(mod0$BUGSoutput$summary[, c("n.eff")])
+# check traceplots, at least for hyperparameters
 # plenty of built-in functions for traceplots but I like this one
 # (I'll add these functions to a separate R script for use in future scripts)
 #---------------
@@ -100,17 +147,98 @@ par(lwd = 3, cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5,mar = c(5,5,1,1), mfr
 PlotTrace(parname = "mu.alpha", mcmc.array)
 PlotTrace(parname = "sigma.alpha", mcmc.array)
 PlotTrace(parname = "sigma.y", mcmc.array)
+```
 
-par(lwd = 3, cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5,mar = c(5,5,1,1), mfrow = c(1,3))
-hist(c(mcmc.array[,,"mu.alpha"]), freq = F, main = "", xlab = expression(mu[alpha]))
-curve(dnorm(x,1,3), add = T, col = 2)
+The high $N_{eff}$ values show that the chains have low auto-covariance. The $\hat{R}$ value of 1 for all params show that all the chains have mixed well, and they did not get stuck in local modes.
 
-hist(c(mcmc.array[,,"sigma.alpha"]), freq = F, main = "", xlab = expression(sigma[alpha]))
-curve(dunif(x,0,5), add = T, col = 2)
 
-hist(c(mcmc.array[,,"sigma.y"]), freq = F, main = "", xlab = expression(sigma[y]))
-curve(dunif(x,0,5), add = T, col = 2)
+### Problem 3
+
+#### a)
+```{r}
+print (c(mean(mcmc.array[,,"mu.alpha"]),  quantile(mcmc.array[,,"mu.alpha"],c(.025,.975))     ))
+print (c(mean(mcmc.array[,,"sigma.alpha"]),  quantile(mcmc.array[,,"sigma.alpha"],c(.025,.975))     ))
+print (c(mean(mcmc.array[,,"sigma.y"]),  quantile(mcmc.array[,,"sigma.y"],c(.025,.975))     ))
 
 ```
 
+#### b)
+```{r}
+print (round(mod0$BUGSoutput$summary[c("alpha.j[1]"), c("mean", "sd", "2.5%", "97.5%")],1))
+```
 
+### Problem 4
+```{r}
+par(lwd = 3, cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5,mar = c(5,5,1,1))
+lims <- range(cty.mns.j-partpooled.j)
+plot(c(cty.mns.j-partpooled.j) ~ sample.size.jittered.j, type = "p",
+     ylab = expression(bar(y)[j] - alpha[j]), 
+     xlab = expression(paste(n[j], ", county sample size")), pch = 20,
+     log = "x",
+     ylim = lims)
+
+abline(h=ybarbar)
+
+plot(cty.mns.j,partpooled.j,abline(h=ybarbar))
+abline(0,1)
+
+```
+
+We can see that there is more variability of $\bar{y_j}$ around $\alpha_j$ when sample size is small, which makes sense because the data does not pull $\alpha_j$ towards $\bar{y_j}$. We can also see that as$\bar{y}$ gets larger in magnitude relative to the overall mean, the $\alpha_j$ is pulled down towards the overall mean. Similarly, as $\bar{y}$ gets small in magnitiute relative to the overall mean, $\alpha_j$ gets pulled upwards towards the overall-mean. This is the "shrinkage" effect. 
+
+### Problem 5
+
+Consider
+
+
+$$p(\alpha_j | y, \mu_{\alpha}, \sigma_{y}, \sigma_{\alpha}) \propto p(y | \alpha_j,\sigma_y)p(\alpha_j | \mu_{\alpha},\sigma_{\alpha})$$
+
+$$p(\alpha_j | y, \mu_{\alpha}, \sigma_{y}, \sigma_{\alpha}) \propto (\frac{1}{\sqrt{2\pi\sigma_y}})^ne^{-\frac{1}{2\sigma_y^2}\sum_i(y_i-\alpha_j)^2} \frac{1}{\sqrt{2\pi\sigma_{\alpha}}}e^{-\frac{1}{2\sigma_{\alpha}^2}(\alpha_j - \mu_{\alpha})^2}$$
+
+
+
+For now, let's just focus in on the terms involving $e^{x}$
+
+we see the exponent can be written as 
+
+$$-\frac{1}{2\sigma_y^2}\sum_i(y_i-\alpha_j)^2 - \frac{1}{2\sigma_{\alpha}^2}(\alpha_j - \mu_{\alpha})^2$$
+Expanding out the square we get 
+
+$$-\frac{1}{2\sigma_y^2}\sum_i(y^2 -2y\alpha_j +\alpha_j^2)  - \frac{1}{2\sigma_{\alpha}^2}(\alpha_j^2 - 2\alpha_j\mu_{\alpha}+ \mu_{\alpha}^2)$$
+
+
+$$-\frac{1}{2\sigma_y^2}\sum_iy^2  +  \frac{n_j\bar{y_j}\alpha_j}{\sigma_y^2} - \frac{n_j\alpha_j^2}{2\sigma_y^2}  - \frac{1}{2\sigma_{\alpha}^2}\alpha_j^2  + \frac{1}{\sigma_{\alpha}^2}\alpha_j\mu_{\alpha} - \frac{1}{2\sigma_{\alpha}^2}\mu_{\alpha}^2$$
+
+Collecting terms on $\alpha_j$ we can re-write this as 
+
+
+$$  - \frac{n_j\alpha_j^2}{2\sigma_y^2}  - \frac{1}{2\sigma_{\alpha}^2}\alpha_j^2 + \frac{1}{\sigma_{\alpha}^2}\alpha_j\mu_{\alpha} +  \frac{n_j\bar{y_j}\alpha_j}{\sigma_y^2} - \frac{1}{2\sigma_{\alpha}^2}\mu_{\alpha}^2   -\frac{1}{2\sigma_y^2}\sum_iy^2$$
+
+$$   -\alpha_j^2(\frac{n_j}{2\sigma_y^2}  + \frac{1}{2\sigma_{\alpha}^2}) + \alpha_j( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2}) - \frac{1}{2\sigma_{\alpha}^2}\mu_{\alpha}^2   -\frac{1}{2\sigma_y^2}\sum_iy^2$$
+
+We see this is almost a quadratic in $\alpha_j$, that is we almost have a form of 
+
+$$a^2 \alpha_j^2 - b\alpha_j  + c^2 - c^2 = (a\alpha_j -c)^2$$
+If we take $$b=2ac \rightarrow c = \frac{b}{2a}$$
+
+We know from above that $b=( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})$
+
+and $a=\sqrt{ \frac{n_j}{2\sigma_y^2}  + \frac{1}{2\sigma_{\alpha}^2}}$
+
+So we can choose $$c = \frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\sqrt{2(\frac{n_j}{2\sigma_y^2}  + \frac{1}{2\sigma_{\alpha}^2})}}$$
+
+$$=\frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\sqrt{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}}}$$
+plugging this back into the exp we get 
+
+$$p(\alpha_j | y, \mu_{\alpha}, \sigma_{y}, \sigma_{\alpha}) \propto \frac{1}{C}e^{-(\sqrt{\frac{n_j}{2\sigma_y^2}  + \frac{1}{2\sigma_{\alpha}^2}} \alpha_j - \frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\sqrt{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}})^2}}$$
+
+$$p(\alpha_j | y, \mu_{\alpha}, \sigma_{y}, \sigma_{\alpha}) \propto \frac{1}{C}e^{-\frac{1}{\frac{n_j}{2\sigma_y^2}  + \frac{1}{2\sigma_{\alpha}^2}}( \alpha_j - \frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}})^2}$$
+
+
+$$p(\alpha_j | y, \mu_{\alpha}, \sigma_{y}, \sigma_{\alpha}) \propto \frac{1}{C}e^{-\frac{1}{2}\frac{1}{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}  }( \alpha_j - \frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}})^2}$$
+which we can see is the kernel of a normal distribution with mean 
+
+$$m = \frac{( \frac{1}{\sigma_{\alpha}^2}\mu_{\alpha} +  \frac{n_j\bar{y_j}}{\sigma_y^2})}{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}})^2$$
+and variance 
+
+$$v = \frac{1}{\frac{n_j}{\sigma_y^2}  + \frac{1}{\sigma_{\alpha}^2}}$$
