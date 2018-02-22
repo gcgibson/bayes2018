@@ -68,7 +68,7 @@ sigma.alpha ~ dunif(0,5)
 library(rjags)
 library(R2jags)
 library(ggplot2)
-
+  
 jags.data <- list(  y.i = y.i,  n = n, getj.i  = countygetj.i, J = J)
 parnames <- c("alpha.j", "mu.alpha", "sigma.y", "sigma.alpha")
 mod0 <-jags(data = jags.data, 
@@ -83,7 +83,7 @@ mu.alpha.hat <- rowMeans(mcmc.array[,,"mu.alpha"])
 mu.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(mu.alpha.hat)),rep("Prior",length(mu.alpha.hat))),val = c(mu.alpha.hat,rnorm(1000,20,6)))
 
 mu.alpha.hat.df$Legend <- as.factor(mu.alpha.hat.df$Legend)
-ggplot(data=mu.alpha.hat.df,
+p1 <- ggplot(data=mu.alpha.hat.df,
        aes(x=val))+
        geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "mu.alpha")
 
@@ -93,7 +93,7 @@ sigma.alpha.hat <- rowMeans(mcmc.array[,,"sigma.alpha"])
 sigma.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.alpha.hat)),rep("Prior",length(sigma.alpha.hat))),val = c(sigma.alpha.hat,runif(1000,0,5)))
 
 sigma.alpha.hat.df$Legend <- as.factor(sigma.alpha.hat.df$Legend)
-ggplot(data=sigma.alpha.hat.df,
+p2 <- ggplot(data=sigma.alpha.hat.df,
        aes(x=val))+
        geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "sigma.alpha")
 
@@ -103,11 +103,13 @@ sigma.y.hat <- rowMeans(mcmc.array[,,"sigma.y"])
 sigma.y.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.y.hat)),rep("Prior",length(sigma.y.hat))),val = c(sigma.y.hat,runif(1000,0,5)))
 
 sigma.y.hat.df$Legend <- as.factor(sigma.y.hat.df$Legend)
-ggplot(data=sigma.y.hat.df,
+p3 <- ggplot(data=sigma.y.hat.df,
        aes(x=val))+
        geom_density(aes(group=Legend, colour=Legend, fill=Legend), alpha=0.3)  +  labs(x = "sigma.y")
 
+require(gridExtra)
 
+grid.arrange(p1, p2,p3, ncol=2)
 
 
 
@@ -118,7 +120,7 @@ ggplot(data=sigma.y.hat.df,
 
 ### Problem 2
 ```{r,echo=FALSE,warning=FALSE,message=FALSE}
-print (round(mod0$BUGSoutput$summary[c("mu.alpha","sigma.alpha","sigma.y"), c("n.eff", "Rhat")],1))
+print (round(mod0$BUGSoutput$summary[c("mu.alpha","sigma.alpha","sigma.y"), c("n.eff", "Rhat")],3))
 
 
 #max(mod0$BUGSoutput$summary[, c("Rhat")])
@@ -149,7 +151,7 @@ PlotTrace(parname = "sigma.alpha", mcmc.array)
 PlotTrace(parname = "sigma.y", mcmc.array)
 ```
 
-The high $N_{eff}$ values show that the chains have low auto-covariance. The $\hat{R}$ value of 1 for all params show that all the chains have mixed well, and they did not get stuck in local modes.
+The high $N_{eff}$ values show that the chains have low auto-covariance, which shows that the chains are able to explore the full parameter space. The $\hat{R}$ value of 1 for all params show that all the chains have mixed well, and they did not get stuck in local modes.
 
 
 ### Problem 3
@@ -184,7 +186,7 @@ abline(0,1)
 
 ```
 
-We can see that there is more variability of $\bar{y_j}$ around $\alpha_j$ when sample size is small, which makes sense because the data does not pull $\alpha_j$ towards $\bar{y_j}$. We can also see that as$\bar{y}$ gets larger in magnitude relative to the overall mean, the $\alpha_j$ is pulled down towards the overall mean. Similarly, as $\bar{y}$ gets small in magnitiute relative to the overall mean, $\alpha_j$ gets pulled upwards towards the overall-mean. This is the "shrinkage" effect. 
+We can see that there is more variability of $\bar{y_j}$ around $\alpha_j$ when sample size is small, which makes sense because the data does not pull $\alpha_j$ towards $\bar{y_j}$. We can from the second plot that as $\bar{y_j}$ gets larger in magnitude relative to the overall mean, the $\alpha_j$ is pulled down towards the overall mean. Similarly, as $\bar{y}$ gets small in magnitiute relative to the overall mean, $\alpha_j$ gets pulled upwards towards the overall-mean. This is the "shrinkage" effect. 
 
 ### Problem 5
 
