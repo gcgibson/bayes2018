@@ -80,7 +80,7 @@ mcmc.array <- mod0$BUGSoutput$sims.array
 
 mu.alpha.hat <- rowMeans(mcmc.array[,,"mu.alpha"])
 
-mu.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(mu.alpha.hat)),rep("Prior",length(mu.alpha.hat))),val = c(mu.alpha.hat,rnorm(1000,20,6)))
+mu.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(mu.alpha.hat)),rep("Prior",10000)),val = c(mu.alpha.hat,rnorm(10000,20,6)))
 
 mu.alpha.hat.df$Legend <- as.factor(mu.alpha.hat.df$Legend)
 p1 <- ggplot(data=mu.alpha.hat.df,
@@ -90,7 +90,7 @@ p1 <- ggplot(data=mu.alpha.hat.df,
 
 sigma.alpha.hat <- rowMeans(mcmc.array[,,"sigma.alpha"])
 
-sigma.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.alpha.hat)),rep("Prior",length(sigma.alpha.hat))),val = c(sigma.alpha.hat,runif(1000,0,5)))
+sigma.alpha.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.alpha.hat)),rep("Prior",10000)),val = c(sigma.alpha.hat,runif(10000,0,5)))
 
 sigma.alpha.hat.df$Legend <- as.factor(sigma.alpha.hat.df$Legend)
 p2 <- ggplot(data=sigma.alpha.hat.df,
@@ -100,7 +100,7 @@ p2 <- ggplot(data=sigma.alpha.hat.df,
 
 sigma.y.hat <- rowMeans(mcmc.array[,,"sigma.y"])
 
-sigma.y.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.y.hat)),rep("Prior",length(sigma.y.hat))),val = c(sigma.y.hat,runif(1000,0,5)))
+sigma.y.hat.df <- data.frame(Legend = c(rep("Posterior",length(sigma.y.hat)),rep("Prior",10000)),val = c(sigma.y.hat,runif(10000,0,5)))
 
 sigma.y.hat.df$Legend <- as.factor(sigma.y.hat.df$Legend)
 p3 <- ggplot(data=sigma.y.hat.df,
@@ -175,18 +175,22 @@ par(lwd = 3, cex.axis = 1.5, cex.lab = 1.5, cex.main = 1.5,mar = c(5,5,1,1))
 lims <- range(cty.mns.j-partpooled.j)
 plot(c(cty.mns.j-partpooled.j) ~ sample.size.jittered.j, type = "p",
      ylab = expression(bar(y)[j] - alpha[j]), 
-     xlab = expression(paste(n[j], ", county sample size")), pch = 20,
+     xlab = expression(paste(n[j], ", group sample size")), pch = 20,
      log = "x",
      ylim = lims)
 
 abline(h=ybarbar)
 
-plot(cty.mns.j,partpooled.j,abline(h=ybarbar))
-abline(0,1)
+dat <- data.frame(x=cty.mns.j, y1=partpooled.j, y2=sample.size.jittered.j)
 
+
+plot(y1 ~ x, data=dat, ylab = expression(alpha[j]), xlab = "group sample mean",cex=0)
+text(cty.mns.j, partpooled.j, labels=round(sample.size.jittered.j,1), cex= 0.7)
+abline(0,1)
+abline(h=ybarbar)
 ```
 
-We can see that there is more variability of $\bar{y_j}$ around $\alpha_j$ when sample size is small, which makes sense because the data does not pull $\alpha_j$ towards $\bar{y_j}$. We can from the second plot that as $\bar{y_j}$ gets larger in magnitude relative to the overall mean, the $\alpha_j$ is pulled down towards the overall mean. Similarly, as $\bar{y}$ gets small in magnitiute relative to the overall mean, $\alpha_j$ gets pulled upwards towards the overall-mean. This is the "shrinkage" effect. 
+We can see that there is more variability of $\bar{y_j}$ around $\alpha_j$ when sample size is small, which makes sense because the data does not pull $\alpha_j$ towards $\bar{y_j}$. From plot 2, we can see that larger sample sizes are pulled closer to $\bar{y_j}$ and smaller sample sizes are pulled closer to $\bar{\bar{y}}$.
 
 ### Problem 5
 
