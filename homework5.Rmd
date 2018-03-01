@@ -1,0 +1,163 @@
+---
+title: "Homework 5"
+author: "Casey Gibson"
+header-includes:
+   - \usepackage{amsmath}
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Problem 1
+
+Let $$x_i = \text{ entry score of ith student}$$
+ $$p_i = \text{parents education ith student}$$
+ $$q_j = \text{school quality of the jth student}$$
+$$y_i  \sim N(  \alpha_{j[i]} +  \beta_{1,{j[i]}} x_i + \beta_2p_i , \sigma_{y}^2)$$
+$$\alpha_j = \gamma_0^\alpha + \gamma_1^\alpha q_i+ \eta_j^\alpha$$
+$$\beta_{1,j} = \gamma_0^{\beta_1} + \gamma_1^{\beta_1} q_i + \eta_j^{\beta_1}$$
+
+where
+
+$$\begin{pmatrix}
+\eta_j^\alpha \\
+\eta_j^{\beta_1} 
+\end{pmatrix} \sim N(\begin{pmatrix} 0 \\ 0 \end{pmatrix},\begin{pmatrix} \sigma_{\alpha}^2 & \rho\sigma_{\alpha} \sigma_{\beta_1} \\  \rho\sigma_{\alpha} \sigma_{\beta_1} & \sigma_{\beta_1}^2
+\end{pmatrix}$$
+
+$$y_i  \sim N(  \alpha_{j[i]} +  \beta_{1,{j[i]}} x_i + \beta_2p_i , \sigma_{y}^2)$$
+
+
+\textbf{b)}
+
+$$y_i  \sim N(  \alpha_{j[i]} +  \beta_{1,{j[i]}} x_i + \beta_{2,{j[i]}}p_i , \sigma_{y}^2)$$
+
+$$\alpha_j = \gamma_0^\alpha + \gamma_1^\alpha q_i+ \eta_j^\alpha$$
+$$\beta_{1,j} = \gamma_0^{\beta_1} + \gamma_1^{\beta_1} q_i + \eta_j^{\beta_1}$$
+
+$$\beta_{2,j} = \gamma_0^{\beta_2} + \gamma_1^{\beta_2} q_i + \eta_j^{\beta_2}$$
+
+where
+
+$$\begin{pmatrix} \eta_j^\alpha \\
+\eta_j^{\beta_1}  \\
+\eta_j^{\beta_2}
+\end{pmatrix} \sim N(\begin{pmatrix} 0 \\ 0 \\ 0 \end{pmatrix},\begin{pmatrix} \sigma_{\alpha}^2 & \rho_{\alpha,\beta_1}\sigma_{\alpha} \sigma_{\beta_1} & \rho_{\alpha,\beta_2}\sigma_{\alpha} \sigma_{\beta_2} \\  \rho_{\beta_1,\alpha}\sigma_{\beta_1} \sigma_{\alpha} & \sigma_{\beta_1}^2 & \rho_{\beta_1,\beta_2}\sigma_{\beta_1} \sigma_{\beta_2} \\
+\rho_{\beta_2,\alpha}\sigma_{\beta_2} \sigma_{\alpha} &  \rho_{\beta_2,\beta_1}\sigma_{\beta_2} \sigma_{\beta_1} & \sigma_{\beta_2}^2 
+\end{pmatrix}$$
+
+where $\rho_{a,b} =\rho_{b,a}$
+
+
+### Problem 2
+
+\textbf{a)}
+```{r, echo=FALSE, message=FALSE, }
+srrs2 <- read.table("/Users/gcgibson/Downloads/marriage.csv", header=T, sep=",")
+#names(srrs2)
+#unique(srrs2$state) # states
+# we'll use MN
+
+n <- length(srrs2$agemarried)
+y.i <- srrs2$agemarried
+#x.i <- floor.i
+
+# get county index variable
+county.i <- as.vector(srrs2$ethnicgroup)
+county.j <- unique(county.i)
+J <- length(county.j)
+countygetj.i <- rep (NA, n) 
+for (j in 1:J){
+  countygetj.i[county.i==county.j[j]] <- j
+}
+
+# state mean, n.j and county means
+ybarbar = mean(y.i) # state mean
+sample.size.j <- as.vector (table (county.i))
+cty.mns.j = tapply(y.i,countygetj.i,mean) # county means
+
+# to plot observations and county means ~ sample sizes, 
+# easier to see if sample sizes are slighly jittered
+set.seed(12345)
+sample.size.jittered.j <- sample.size.j*exp (runif (J, -.1, .1))
+
+
+model <- 
+"model {
+for (i in 1:n){
+  y.i[i] ~ dnorm(alpha.j[getj.i[i]],tau.y)
+}
+
+for (j in 1:J){
+ alpha.j[j] ~ dnorm(mu.alpha,tau.alpha)
+}
+
+tau.y <- pow(sigma.y, -2)
+tau.alpha <-  pow(sigma.alpha, -2)
+
+mu.alpha ~ dnorm(20,1/6^2)
+sigma.y ~ dunif(0,5)
+sigma.alpha ~ dunif(0,5)
+
+}"
+
+library(rjags)
+library(R2jags)
+library(ggplot2)
+  
+jags.data <- list(  y.i = y.i,  n = n, getj.i  = countygetj.i, J = J)
+parnames <- c("alpha.j", "mu.alpha", "sigma.y", "sigma.alpha")
+mod0 <-jags(data = jags.data, 
+            parameters.to.save=parnames, 
+            model.file = textConnection(model))
+# point estimates of the county means
+partpooled.j <- mod0$BUGSoutput$summary[paste0("alpha.j[", 1:J, "]"), c("mean")]
+mcmc.array <- mod0$BUGSoutput$sims.array
+
+mu.alpha.hat <- rowMeans(mcmc.array[,,"mu.alpha"])
+
+
+
+
+sigma.y.hat <- rowMeans(mcmc.array[,,"sigma.y"])
+# or in R directly
+sigmay.s <- c(mod0$BUGSoutput$sims.array[,,"sigma.y"])
+S <- length(sigmay.s)
+
+
+
+mualpha.s <- c(mod0$BUGSoutput$sims.array[,,"mu.alpha"])
+sigmaalpha.s <- c(mod0$BUGSoutput$sims.array[,,"sigma.alpha"])
+alphanew.s <- rnorm(S,mualpha.s, sigmaalpha.s)
+ynewcounty.s <- rnorm(S, alphanew.s , sigmay.s)
+
+
+
+print ("Mean")
+print (signif(mean(alphanew.s)),3)
+print ("95 PI")
+print (signif(quantile(alphanew.s,c(.025,.975))),3)
+```
+
+\textbf{b)}
+
+```{r,echo=FALSE}
+print ("Mean")
+print (signif(mean(ynewcounty.s)),3)
+print ("95 PI")
+print (signif(quantile(ynewcounty.s,c(.025,.975))),3)
+```
+
+In \textbf{a)} we sampled from the posterior predictive distribution of $\alpha_j$, that is we generated samples according to
+
+$$\alpha_{j[k]}^{new} | \mu_\alpha^{(s)}, \sigma_\alpha^{(s)} \sim N(\mu_\alpha^{(s)},(\sigma_\alpha^2)^{(s)})  $$
+
+and similarly for \textbf{b)} we generated samples from 
+
+$$y_k^{new} |\alpha_{j[k]}^{(s)}, \sigma_y^{(s)} \sim N(\alpha_{j[k]}^{(s)},(\sigma_y^2)^{(s)})  $$
+
+It makes sense that we see a larger PI for the observation level, rather than the cluster level since we are incorporating two sources of uncertainty.
