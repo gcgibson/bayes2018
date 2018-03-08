@@ -472,19 +472,47 @@ This make sense because we have reduced the variance within each group by puttin
 #### b)
 
 ```{r}
-linpred <-b0_mean +  (.5-mean(dist100))*b1_mean +(log(1.2)-mean(log.arsenic))*b2_mean 
 
 invlogit <- function(x) {exp(x)/(1 + exp(x))}
+p <- c()
+p <- c(p,quantile(invlogit(mcmc.array[,,"b0"]+ (.5-mean(dist100))*mcmc.array[,,"b1"] +(log(1.2)-mean(log.arsenic))*mcmc.array[,,"b2"]  +mcmc.array[,,"alpha.j[1]"]),c(.025,.975)))
 
-print ("J = 1")
-quantile(invlogit(linpred+mcmc.array[,,"alpha.j[1]"]),c(.025,.975))
-print ("J = 2")
-quantile(invlogit(linpred+mcmc.array[,,"alpha.j[2]"]),c(.025,.975))
-print ("J = 3")
-quantile(invlogit(linpred+mcmc.array[,,"alpha.j[3]"]),c(.025,.975))
-print ("J = 4")
-quantile(invlogit(linpred+mcmc.array[,,"alpha.j[4]"]),c(.025,.975))
-print ("J = 5")
-quantile(invlogit(linpred+mcmc.array[,,"alpha.j[5]"]),c(.025,.975))
+p <-  c(p, quantile(invlogit(mcmc.array[,,"b0"]+ (.5-mean(dist100))*mcmc.array[,,"b1"] +(log(1.2)-mean(log.arsenic))*mcmc.array[,,"b2"]  +mcmc.array[,,"alpha.j[2]"]),c(.025,.975)))
+
+p <- c(p, 
+quantile(invlogit(mcmc.array[,,"b0"]+ (.5-mean(dist100))*mcmc.array[,,"b1"] +(log(1.2)-mean(log.arsenic))*mcmc.array[,,"b2"]  +mcmc.array[,,"alpha.j[3]"]),c(.025,.975)))
+p <- c(p,
+quantile(invlogit(mcmc.array[,,"b0"]+ (.5-mean(dist100))*mcmc.array[,,"b1"] +(log(1.2)-mean(log.arsenic))*mcmc.array[,,"b2"]  +mcmc.array[,,"alpha.j[4]"]),c(.025,.975)))
+
+p <- c(p,
+quantile(invlogit(mcmc.array[,,"b0"]+ (.5-mean(dist100))*mcmc.array[,,"b1"] +(log(1.2)-mean(log.arsenic))*mcmc.array[,,"b2"]  +mcmc.array[,,"alpha.j[5]"]),c(.025,.975)))
+
+p <- matrix(p,ncol=2,byrow = TRUE)
+
+df_p <- data.frame(p)
+rownames(df_p)=c("group1","group2","group3","group4","group5")
+colnames(df_p)=c("L","U")
+
+print (df_p)
+b0= mod2$BUGSoutput$summary["b0",][c(3,7)]
+b1=mod2$BUGSoutput$summary["b1",][c(3,7)]
+b2=mod2$BUGSoutput$summary["b2",][c(3,7)]
+alpha1=mod2$BUGSoutput$summary["alpha.j[1]",][c(3,7)]
+alpha2=mod2$BUGSoutput$summary["alpha.j[2]",][c(3,7)]
+alpha3=mod2$BUGSoutput$summary["alpha.j[3]",][c(3,7)]
+alpha4=mod2$BUGSoutput$summary["alpha.j[4]",][c(3,7)]
+alpha5=mod2$BUGSoutput$summary["alpha.j[5]",][c(3,7)]
+alpha=rbind(alpha1,alpha2,alpha3,alpha4,alpha5)
+
+p=c()
+for(i in 1:5)
+{
+odd=alpha[i]+b0+b1*(0.5-mean(dist100))+b2*(log(1.2)-mean(log.arsenic))
+cache=exp(odd)/(1+exp(odd))
+p=rbind(p,cache)
+}
+rownames(p)=c("group1","group2","group3","group4","group5")
+round(p,digit=3)
+print (p)
 
 ```
