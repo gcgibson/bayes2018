@@ -1,7 +1,6 @@
 ---
 title: "Homework 6"
 author: "Casey Gibson"
-date: "3/2/2018"
 output:
   pdf_document: default
   html_document: default
@@ -12,7 +11,7 @@ knitr::opts_chunk$set(cache=TRUE)
 
 ### Problem 1 
 
-```{r, echo=FALSE,message=FALSE, results='hide'}
+```{r, echo=FALSE,message=FALSE, results='hide',  fig.height=3}
 #-------------------------------------------------------------
 # 4_logistic
 # Leontine Alkema
@@ -83,8 +82,9 @@ min(mod2$BUGSoutput$summary[, c("n.eff")])
 which.max(mod2$BUGSoutput$summary[, c("Rhat")])
 which.min(mod2$BUGSoutput$summary[, c("n.eff")])
 # just some trace plots
-#PlotTrace("b0", mod2$BUGSoutput$sims.array)
-#PlotTrace("b1", mod2$BUGSoutput$sims.array)
+
+PlotTrace("b0", mod2$BUGSoutput$sims.array)
+PlotTrace("b1", mod2$BUGSoutput$sims.array)
 
 # some priors and posteriors to check that priors weren't informative
 mcmc.array <- mod2$BUGSoutput$sims.array
@@ -96,13 +96,12 @@ for (k in 0:1){
 ```
 
 ```{r}
-print ("B0")
-print (signif(mean(mod2$BUGSoutput$sims.array[,,"b0"]),3))
-print (signif(quantile(mod2$BUGSoutput$sims.array[,,"b0"],c(.025,.975)),3))
+print 
+print (c("B0",(signif(mean(mod2$BUGSoutput$sims.array[,,"b0"]),3))),signif(quantile(mod2$BUGSoutput$sims.array[,,"b0"],c(.025,.975)),3))
 
-print ("B1")
-print (signif(mean(mod2$BUGSoutput$sims.array[,,"b1"]),3))
-print (signif(quantile(mod2$BUGSoutput$sims.array[,,"b1"],c(.025,.975)),3))
+
+print (c(("B1"),signif(mean(mod2$BUGSoutput$sims.array[,,"b1"]),3),signif(quantile(mod2$BUGSoutput$sims.array[,,"b1"],c(.025,.975)),3)))
+
 ```
 
 ```{r,results="hide"}
@@ -494,25 +493,6 @@ rownames(df_p)=c("group1","group2","group3","group4","group5")
 colnames(df_p)=c("L","U")
 
 print (df_p)
-b0= mod2$BUGSoutput$summary["b0",][c(3,7)]
-b1=mod2$BUGSoutput$summary["b1",][c(3,7)]
-b2=mod2$BUGSoutput$summary["b2",][c(3,7)]
-alpha1=mod2$BUGSoutput$summary["alpha.j[1]",][c(3,7)]
-alpha2=mod2$BUGSoutput$summary["alpha.j[2]",][c(3,7)]
-alpha3=mod2$BUGSoutput$summary["alpha.j[3]",][c(3,7)]
-alpha4=mod2$BUGSoutput$summary["alpha.j[4]",][c(3,7)]
-alpha5=mod2$BUGSoutput$summary["alpha.j[5]",][c(3,7)]
-alpha=rbind(alpha1,alpha2,alpha3,alpha4,alpha5)
 
-p=c()
-for(i in 1:5)
-{
-odd=alpha[i]+b0+b1*(0.5-mean(dist100))+b2*(log(1.2)-mean(log.arsenic))
-cache=exp(odd)/(1+exp(odd))
-p=rbind(p,cache)
-}
-rownames(p)=c("group1","group2","group3","group4","group5")
-round(p,digit=3)
-print (p)
 
 ```
