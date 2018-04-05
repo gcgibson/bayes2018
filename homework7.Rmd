@@ -1,0 +1,242 @@
+---
+title: "Homework 7"
+author: "Casey Gibson"
+date: "4/2/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+### Problem 1
+$$y_t = \rho y_{t-1} + \epsilon_t$$
+$$\gamma_k  = Cov(y_{t-k},y_t) = \rho^k\gamma_0$$
+$$y_{t-k}\cdot y_t = y_{t-k} \cdot \rho y_{t-1} +y_{t-k}\cdot \epsilon_t$$
+$$E(y_{t-k}\cdot y_t) =\rho E(y_{t-k} \cdot y_{t-1}) +E(y_{t-k})\cdot E(\epsilon_t)$$
+by independence.
+
+$$E(y_{t-k} \cdot y_t) = \rho E( y_{t-k} \cdot y_{t-1}) $$
+and we can keep going , by writing the right hand side as 
+
+$$E(y_{t-k}\cdot y_{t-1}) = \rho E(y_{t-k} \cdot y_{t-2}) + 0$$
+Pluggin this into the above we get 
+
+$$E(y_{t-k}\cdot y_{t}) = \rho^2E(y_{t-k} \cdot y_{t-2})$$
+So continuing we see that 
+$$E(y_{t-k} \cdot y_t) = \rho^k E( y_{t-k} \cdot y_{t-k}) $$
+We know that $$E(y_{t-k}^2) = Var(y_{t-k}) - E(y_{t-k})^2$$
+$$E(y_{t-k}^2) = Var(y_{t-k}) - 0^2$$
+because $E(y_{t-k}) = 0$.
+
+We also know that 
+
+$$Var(y_{t-k}) = Cov(y_{t-k},y_{t-k}) = Cov(y_t,y_t) =  \gamma_0$$
+So plugging back in we see,
+
+$$E(y_{t-k} \cdot y_t) = \rho^k \gamma_0 $$
+
+### Problem 2
+
+```{r}
+library(R2jags)
+library(rjags)
+
+GetAR <- function(nyears, # length of series
+                  rho, sigma, # AR parameters
+                  eps0.t = NULL, # innovations (optional)
+                  ystart = NULL # starting value y1 (optional)
+                  ){
+  if (is.null(eps0.t)){
+    set.seed(123)
+    eps0.t <- rnorm(nyears, 0, 1)
+  }
+  y.t <- rep(NA, nyears)
+  if (is.null(ystart)){
+    y.t[1] <- sigma/sqrt(1-rho^2)*eps0.t[1]
+  } else {
+    y.t[1] <- ystart
+  }
+  for (t in 2:nyears){
+    y.t[t] <- rho*y.t[t-1] + sigma*eps0.t[t]
+  }
+  return(y.t)
+}
+rho <- 0.5
+sigma <- 1
+sigma.y <- 0.5
+nyears <- 100
+mu.t <- GetAR(nyears, rho, sigma)
+set.seed(124)
+y.t <- mu.t + rnorm(nyears, 0, sigma.y)
+
+
+model <- "
+model{
+mu.t[1] ~ dnorm(0, tau.stat)
+
+tau.stat <- (1-pow(rho,2))/pow(sigma,2)
+for (t in 2:(nyears+P)){
+ mu.t[t] ~ dnorm(muhat.t[t], tau)
+ muhat.t[t] <- rho*mu.t[t-1]
+ yhat.t[t] ~ dnorm(muhat.t[t], tau.y)
+
+}
+for (t in 1:nyears){
+  y.t[t] ~ dnorm(mu.t[t], tau.y)
+}
+
+
+tau <- pow(sigma,-2)
+sigma ~ dunif(0,3)
+tau.y <- pow(sigma.y,-2)
+sigma.y ~ dunif(0,3)
+rho ~ dunif(-1,1)
+}
+"
+
+P <- 20
+set.seed(1234)
+t.i <- sort(sample(seq(1,100), size = 70))
+y.t[-t.i] <- NA
+jags.data <- list(y.t = y.t, nyears=nyears,P=P)
+parnames <- c("sigma", "rho","mu.t","sigma.y","muhat.t","yhat.t")
+
+mod <- jags(data = jags.data, 
+           parameters.to.save= c(parnames),  n.chains = 4, n.burnin = 1000, n.iter = 1000+30000, n.thin =30
+,
+           model.file = textConnection(model))
+
+```
+
+```{r}
+mcmc.array <- mod$BUGSoutput$sims.array
+mcmc.list <- mod$BUGSoutput$sims.list
+mean(mcmc.array[,,"mu.t[6]"])
+quantile(mcmc.array[,,"mu.t[6]"],c(.025,.975))
+```
+
+
+```{r,echo=FALSE,message=FALSE}
+AddCIs <- function(CI.low.t, # lower bound for seq.years.t
+                   CI.up.t, # upper bound for seq.years.t
+                   seq.years.t, col = 1){
+  # add CIs to a plot.
+  col = adjustcolor(col, alpha.f = 0.1)
+  for (t in 2:length(seq.years.t))
+    polygon(c(seq.years.t[t-1], seq.years.t[t-1], seq.years.t[t], seq.years.t[t],seq.years.t[t-1]),
+            c(CI.low.t[t-1], CI.up.t[t-1], CI.up.t[t], CI.low.t[t], CI.low.t[t-1]),
+            col=col, border = NA)
+}
+mu.st <- mod$BUGSoutput$sims.list[["mu.t"]]
+mu.qt <- apply(mu.st, 2, quantile, c(0.025, 0.5, 0.975))
+par(lwd = 3, cex.axis = 2, cex.lab = 2, cex.main = 2,mar = c(5,5,1,1), mfrow = c(1,1))
+plot(y.t, type = "n", ylab = expression(y[t]), xlab = expression(t))
+AddCIs(CI.low.t = mu.qt[1,],CI.up.t = mu.qt[3,], seq.years.t = seq(1, nyears), col = 2)
+lines(mu.qt[2,], type = "l", col = 2)
+# true AR(1)
+lines(mu.t, col = "purple", lty = 2)
+points(y.t)
+mcmc.array <- mod$BUGSoutput$sims.array
+
+```
+
+We can forecast $\mu_t$ using 
+
+$$\mu_{101}^{(s)} | \mu_{100}^{(s)} , \rho^{(s)},(\delta^2)^{(s)} \sim N(\mu_{100}^{(s)},(\delta^2)^{(s)})$$
+and forecast $y_t$ using 
+$$y_{101}^{(s)} | \mu_{101}^{(s)}, (\sigma^2)^{(s)} \sim N(\mu_{101}^{(s)},(\sigma^2)^{(s)})$$
+
+and so on as we extend in time. 
+
+```{r,echo=FALSE,message=FALSE}
+
+mu_90_120_mean <- c()
+mu_90_120_upper_ci <- c()
+mu_90_120_lower_ci <- c()
+for (i in 90:120){
+  mu_90_120_mean <- c(mu_90_120_mean,mean(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")]))
+  mu_90_120_upper_ci <- c(mu_90_120_upper_ci,quantile(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")],.975))
+  mu_90_120_lower_ci <- c(mu_90_120_lower_ci,quantile(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")],.025))
+}
+
+
+y_90_120_mean <- c()
+y_90_120_upper_ci <- c()
+y_90_120_lower_ci <- c()
+for (i in 90:120){
+  y_90_120_mean <- c(y_90_120_mean,mean(mcmc.array[,,paste(paste("yhat.t[",i,sep=""),"]",sep="")]))
+  y_90_120_upper_ci <- c(y_90_120_upper_ci,quantile(mcmc.array[,,paste(paste("yhat.t[",i,sep=""),"]",sep="")],.975))
+  y_90_120_lower_ci <- c(y_90_120_lower_ci,quantile(mcmc.array[,,paste(paste("yhat.t[",i,sep=""),"]",sep="")],.025))
+}
+
+plot(90:100,y.t[90:100],ylim=c(-3,3),xlim=c(90,120),xlab="Time",ylab="muhat",col='red',sub="Blue=UI,Red=CI")
+lines(90:120,mu_90_120_mean,ylim=c(-3,3))
+lines(90:120,mu_90_120_upper_ci,lty=2,col='red')
+lines(90:120,mu_90_120_lower_ci,lty=2,col='red')
+lines(90:120,y_90_120_upper_ci,lty=2,col='blue')
+lines(90:120,y_90_120_lower_ci,lty=2,col='blue')
+
+```
+
+```{r}
+print ("muhat[101]") 
+print (mean(mcmc.array[,,"muhat.t[101]"]))
+print (quantile(mcmc.array[,,"muhat.t[101]"],c(.025,.975)))
+
+
+```
+
+#### c
+
+```{r,echo=FALSE}
+
+### BEFORE 97
+mu_90_120_mean <- c()
+mu_90_120_upper_ci <- c()
+mu_90_120_lower_ci <- c()
+for (i in 90:97){
+  mu_90_120_mean <- c(mu_90_120_mean,mean(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")]))
+  mu_90_120_upper_ci <- c(mu_90_120_upper_ci,quantile(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")],.975))
+  mu_90_120_lower_ci <- c(mu_90_120_lower_ci,quantile(mcmc.array[,,paste(paste("muhat.t[",i,sep=""),"]",sep="")],.025))
+}
+
+
+#### AFTER 97
+mu97 <- mcmc.array[,,"muhat.t[97]"]
+rho.s <- mcmc.list[["rho"]]
+sigma.s <- mcmc.list[["sigma"]]
+S <- length(rho.s)
+P <- 23
+mu.sp <- matrix(NA, S, P)
+set.seed(1)
+mu.sp[,1] <- rnorm(S, rho.s*mu97[97], sigma.s)
+for (p in 2:P){
+   mu.sp[,p]<-rnorm(S, rho.s*mu.sp[,p-1], sigma.s)
+}
+mu.qp <- apply(mu.sp, 2, quantile, c(0.025, 0.5, 0.975))
+upper_quantile <- mu.qp[3,]
+lower_quantile <- mu.qp[1,]
+plot(90:100,y.t[90:100],ylim =c(-3,3),xlim = c(90,120),ylab="mu_t",xlab="time")
+lines(90:97,mu_90_120_mean)
+lines(90:97,mu_90_120_lower_ci,lty=2,col='red')
+lines(90:97,mu_90_120_upper_ci,lty=2,col='red')
+lines(98:120,colMeans(mu.sp))
+lines(98:120,lower_quantile,lty=2,col='red')
+lines(98:120,upper_quantile,lty=2,col='red')
+abline(v = 98)
+text(98, -3, "cutoff", col = "red") 
+```
+
+```{r}
+print ("muhat[98]")
+
+print (mean(mu.sp[,1]))
+print (quantile(mu.sp[,1],c(.025,.975)))
+
+```
+
+The PI's that result from part $b$ are smaller than those of part $c$ because we are forecasting from later on in the time series.

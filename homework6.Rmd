@@ -76,7 +76,7 @@ parnames2 <- c( "b1", "b0")
 # if you don't understand an error message
 mod2 <- jags(data = jags.data2, 
                     parameters.to.save=parnames2, 
-                    n.chains = 3, n.burnin = 1500, n.iter = 1500+10000, n.thin = 10, model.file = textConnection(model))
+                    n.chains = 3, n.burnin = 1500, n.iter = 1500, n.thin = 10, model.file = textConnection(model))
 max(mod2$BUGSoutput$summary[, c("Rhat")])
 min(mod2$BUGSoutput$summary[, c("n.eff")]) 
 which.max(mod2$BUGSoutput$summary[, c("Rhat")])
